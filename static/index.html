@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네이버 인플루언서 키워드 수집</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .step {
+            margin-bottom: 30px;
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .category-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-item:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .category-item.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .category-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .category-count {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .format-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .format-option {
+            flex: 1;
+        }
+
+        .format-option input[type="radio"] {
+            display: none;
+        }
+
+        .format-option label {
+            display: block;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .format-option input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            color: #155724;
+            display: none;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 네이버 인플루언서 키워드 수집</h1>
+            <p>간편하게 카테고리별 키워드를 수집하세요</p>
+        </div>
+
+        <div class="card">
+            <!-- Step 1: Load Categories -->
+            <div class="step">
+                <div class="step-title">
+                    <span class="step-number">1</span>
+                    카테고리 불러오기
+                </div>
+                <button id="loadCategoriesBtn" onclick="loadCategories()">
+                    📋 카테고리 목록 불러오기
+                </button>
+            </div>
+
+            <!-- Step 2: Select Category -->
+            <div class="step">
+                <div class="step-title">
+                    <span class="step-number">2</span>
+                    카테고리 선택
+                </div>
+                <div id="categoryGrid" class="category-grid"></div>
+            </div>
+
+            <!-- Step 3: Choose Format -->
+            <div class="step">
+                <div class="step-title">
+                    <span class="step-number">3</span>
+                    다운로드 옵션
+                </div>
+                <div class="format-options">
+                    <div class="format-option">
+                        <input type="radio" id="formatTxt" name="format" value="txt" checked>
+                        <label for="formatTxt">TXT<br><small>키워드만</small></label>
+                    </div>
+                    <div class="format-option">
+                        <input type="radio" id="formatTsv" name="format" value="tsv">
+                        <label for="formatTsv">TSV<br><small>키워드+참여자수</small></label>
+                    </div>
+                    <div class="format-option">
+                        <input type="radio" id="formatCsv" name="format" value="csv">
+                        <label for="formatCsv">CSV<br><small>엑셀용</small></label>
+                    </div>
+                </div>
+                <div class="checkbox-option">
+                    <input type="checkbox" id="includeRecomm">
+                    <label for="includeRecomm">추천 키워드 포함</label>
+                </div>
+            </div>
+
+            <!-- Step 4: Download -->
+            <div class="step">
+                <div class="step-title">
+                    <span class="step-number">4</span>
+                    다운로드
+                </div>
+                <button id="downloadBtn" onclick="downloadKeywords()" disabled>
+                    💾 키워드 다운로드
+                </button>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>키워드를 수집하는 중입니다...</p>
+            </div>
+
+            <!-- Result -->
+            <div id="result" class="result"></div>
+        </div>
+
+        <div class="footer">
+            <p>개인용 로컬 실행 전용 | Made with ❤️</p>
+        </div>
+    </div>
+
+    <script>
+        let categories = [];
+        let selectedCategory = null;
+
+        async function loadCategories() {
+            const btn = document.getElementById('loadCategoriesBtn');
+            const grid = document.getElementById('categoryGrid');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            btn.textContent = '불러오는 중...';
+            result.classList.remove('active');
+            
+            try {
+                const response = await fetch('/api/categories');
+                if (!response.ok) throw new Error('카테고리 조회 실패');
+                
+                categories = await response.json();
+                
+                grid.innerHTML = categories.map(cat => `
+                    <div class="category-item" onclick="selectCategory('${cat.id}', '${cat.name}')">
+                        <div class="category-name">${cat.name}</div>
+                        <div class="category-count">${cat.keywordCount}개 키워드</div>
+                    </div>
+                `).join('');
+                
+                result.textContent = `✅ ${categories.length}개 카테고리를 불러왔습니다!`;
+                result.classList.add('active');
+                result.classList.remove('error');
+                
+            } catch (error) {
+                result.textContent = `❌ 오류: ${error.message}`;
+                result.classList.add('active', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📋 카테고리 목록 불러오기';
+            }
+        }
+
+        function selectCategory(id, name) {
+            selectedCategory = { id, name };
+            
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.category-item').classList.add('selected');
+            
+            document.getElementById('downloadBtn').disabled = false;
+        }
+
+        async function downloadKeywords() {
+            if (!selectedCategory) return;
+            
+            const format = document.querySelector('input[name="format"]:checked').value;
+            const includeRecomm = document.getElementById('includeRecomm').checked ? 1 : 0;
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const btn = document.getElementById('downloadBtn');
+            
+            btn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+            
+            try {
+                const url = `/api/keywords.txt?categoryId=${selectedCategory.id}&format=${format}&includeRecomm=${includeRecomm}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) throw new Error('키워드 조회 실패');
+                
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `${selectedCategory.name}_keywords.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+                
+                result.textContent = `✅ "${selectedCategory.name}" 키워드가 다운로드되었습니다!`;
+                result.classList.add('active');
+                result.classList.remove('error');
+                
+            } catch (error) {
+                result.textContent = `❌ 오류: ${error.message}`;
+                result.classList.add('active', 'error');
+            } finally {
+                loading.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -6,8 +6,10 @@ FastAPI 애플리케이션
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from typing import Literal
+import os
 
 from .scraper import fetch_categories, get_all_keywords
 from .utils import format_keywords_txt, format_keywords_tsv, format_keywords_csv
@@ -28,19 +30,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 정적 파일 서빙 (HTML 프론트엔드)
+static_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.exists(static_path):
+    app.mount("/static", StaticFiles(directory=static_path), name="static")
+
 
 @app.get("/")
 async def root():
-    """API 루트 엔드포인트"""
-    return {
-        "message": "Naver Influencer Keyword API",
-        "version": "1.0.0",
-        "endpoints": {
-            "categories": "/api/categories",
-            "keywords_json": "/api/keywords?categoryId={id}&sleepSec={sec}",
-            "keywords_text": "/api/keywords.txt?categoryId={id}&format={txt|tsv|csv}&includeRecomm={0|1}"
+    """루트 엔드포인트 - HTML 프론트엔드 제공"""
+    html_path = os.path.join(static_path, "index.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path)
+    else:
+        # HTML이 없으면 API 정보 반환
+        return {
+            "message": "Naver Influencer Keyword API",
+            "version": "1.0.0",
+            "endpoints": {
+                "categories": "/api/categories",
+                "keywords_json": "/api/keywords?categoryId={id}&sleepSec={sec}",
+                "keywords_text": "/api/keywords.txt?categoryId={id}&format={txt|tsv|csv}&includeRecomm={0|1}"
+            }
         }
-    }
 
 
 @app.get("/api/categories")
