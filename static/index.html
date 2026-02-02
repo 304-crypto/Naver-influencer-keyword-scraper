@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +33,7 @@
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .header p {
@@ -44,7 +45,7 @@
             background: white;
             border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             margin-bottom: 20px;
         }
 
@@ -164,7 +165,7 @@
             font-weight: 600;
         }
 
-        .format-option input[type="radio"]:checked + label {
+        .format-option input[type="radio"]:checked+label {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: #667eea;
@@ -207,8 +208,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .result {
@@ -237,8 +243,111 @@
             margin-top: 30px;
             opacity: 0.8;
         }
+
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-modal.active {
+            display: flex;
+        }
+
+        .preview-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .preview-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: #f8f9fa;
+            color: #333;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            padding: 0;
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            background: #e9ecef;
+        }
+
+        .keyword-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .keyword-item {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .keyword-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .keyword-count {
+            color: #667eea;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .preview-info {
+            background: #e7f3ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: #0066cc;
+            font-size: 0.9rem;
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -291,6 +400,13 @@
                     <input type="checkbox" id="includeRecomm">
                     <label for="includeRecomm">추천 키워드 포함</label>
                 </div>
+                <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                    <input type="number" id="previewCount" value="100" min="100" step="100"
+                        style="width: 100px; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;">
+                    <button id="previewBtn" onclick="previewKeywords()" disabled class="secondary">
+                        👁️ 미리보기
+                    </button>
+                </div>
             </div>
 
             <!-- Step 4: Download -->
@@ -314,6 +430,21 @@
             <div id="result" class="result"></div>
         </div>
 
+        <!-- Preview Modal -->
+        <div id="previewModal" class="preview-modal" onclick="closePreview(event)">
+            <div class="preview-content" onclick="event.stopPropagation()">
+                <div class="preview-header">
+                    <h2>🔍 키워드 미리보기</h2>
+                    <button class="close-btn" onclick="closePreview()">×</button>
+                </div>
+                <div class="preview-info">
+                    <strong id="previewCategoryName"></strong> 카테고리의 상위 <span id="previewCountDisplay">100</span>개
+                    키워드입니다.
+                </div>
+                <div id="previewList" class="keyword-list"></div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>개인용 로컬 실행 전용 | Made with ❤️</p>
         </div>
@@ -327,28 +458,28 @@
             const btn = document.getElementById('loadCategoriesBtn');
             const grid = document.getElementById('categoryGrid');
             const result = document.getElementById('result');
-            
+
             btn.disabled = true;
             btn.textContent = '불러오는 중...';
             result.classList.remove('active');
-            
+
             try {
                 const response = await fetch('/api/categories');
                 if (!response.ok) throw new Error('카테고리 조회 실패');
-                
+
                 categories = await response.json();
-                
+
                 grid.innerHTML = categories.map(cat => `
                     <div class="category-item" onclick="selectCategory('${cat.id}', '${cat.name}')">
                         <div class="category-name">${cat.name}</div>
                         <div class="category-count">${cat.keywordCount}개 키워드</div>
                     </div>
                 `).join('');
-                
+
                 result.textContent = `✅ ${categories.length}개 카테고리를 불러왔습니다!`;
                 result.classList.add('active');
                 result.classList.remove('error');
-                
+
             } catch (error) {
                 result.textContent = `❌ 오류: ${error.message}`;
                 result.classList.add('active', 'error');
@@ -360,34 +491,94 @@
 
         function selectCategory(id, name) {
             selectedCategory = { id, name };
-            
+
             document.querySelectorAll('.category-item').forEach(item => {
                 item.classList.remove('selected');
             });
             event.target.closest('.category-item').classList.add('selected');
-            
+
             document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('previewBtn').disabled = false;
+        }
+
+        async function previewKeywords() {
+            if (!selectedCategory) return;
+
+            const includeRecomm = document.getElementById('includeRecomm').checked ? 1 : 0;
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const btn = document.getElementById('previewBtn');
+
+            btn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+
+            try {
+                const url = `/api/keywords?categoryId=${selectedCategory.id}`;
+                const response = await fetch(url);
+
+                if (!response.ok) throw new Error('키워드 조회 실패');
+
+                const data = await response.json();
+                let keywords = [];
+
+                if (includeRecomm && data.recomm && data.recomm.length > 0) {
+                    keywords = [...data.recomm, ...data.normal];
+                } else {
+                    keywords = data.normal;
+                }
+
+                // 사용자 지정 개수만큼
+                const count = parseInt(document.getElementById('previewCount').value) || 100;
+                const topKeywords = keywords.slice(0, count);
+
+                // 모달 표시
+                document.getElementById('previewCategoryName').textContent = selectedCategory.name;
+                document.getElementById('previewCountDisplay').textContent = count;
+                const previewList = document.getElementById('previewList');
+                previewList.innerHTML = topKeywords.map(kw => `
+                    <div class="keyword-item">
+                        <span class="keyword-name">${kw.name}</span>
+                        <span class="keyword-count">${kw.participantCount}명</span>
+                    </div>
+                `).join('');
+
+                document.getElementById('previewModal').classList.add('active');
+
+            } catch (error) {
+                result.textContent = `❌ 오류: ${error.message}`;
+                result.classList.add('active', 'error');
+            } finally {
+                loading.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+
+        function closePreview(event) {
+            if (!event || event.target.id === 'previewModal') {
+                document.getElementById('previewModal').classList.remove('active');
+            }
         }
 
         async function downloadKeywords() {
             if (!selectedCategory) return;
-            
+
             const format = document.querySelector('input[name="format"]:checked').value;
             const includeRecomm = document.getElementById('includeRecomm').checked ? 1 : 0;
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const btn = document.getElementById('downloadBtn');
-            
+
             btn.disabled = true;
             loading.classList.add('active');
             result.classList.remove('active');
-            
+
             try {
                 const url = `/api/keywords.txt?categoryId=${selectedCategory.id}&format=${format}&includeRecomm=${includeRecomm}`;
                 const response = await fetch(url);
-                
+
                 if (!response.ok) throw new Error('키워드 조회 실패');
-                
+
                 const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -397,11 +588,11 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(downloadUrl);
-                
+
                 result.textContent = `✅ "${selectedCategory.name}" 키워드가 다운로드되었습니다!`;
                 result.classList.add('active');
                 result.classList.remove('error');
-                
+
             } catch (error) {
                 result.textContent = `❌ 오류: ${error.message}`;
                 result.classList.add('active', 'error');
@@ -412,4 +603,5 @@
         }
     </script>
 </body>
+
 </html>
