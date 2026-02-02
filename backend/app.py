@@ -109,7 +109,7 @@ async def get_keywords(
 async def get_keywords_text(
     categoryId: str = Query(..., description="카테고리 ID"),
     format: Literal["txt", "tsv", "csv"] = Query("txt", description="출력 포맷"),
-    includeRecomm: Literal[0, 1] = Query(0, description="추천 키워드 포함 여부 (0=미포함, 1=포함)")
+    includeRecomm: int = Query(0, ge=0, le=1, description="추천 키워드 포함 여부 (0=미포함, 1=포함)")
 ):
     """
     키워드 조회 (텍스트 응답)
